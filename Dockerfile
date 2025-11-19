@@ -1,14 +1,14 @@
-FROM php:8.2-fpm
+FROM php:8.2-cli
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    zip \
+    unzip \
     libpng-dev \
     libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip
+    libxml2-dev
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
@@ -18,13 +18,16 @@ COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
+# Copy app files
 COPY . .
 
-RUN composer install --optimize-autoloader --no-dev
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Permissions
-RUN chown -R www-data:www-data /var/www
+# Clear caches
+RUN php artisan config:clear && php artisan cache:clear
 
-EXPOSE 9000
+EXPOSE 8080
 
-CMD ["php-fpm"]
+# Start Laravel server
+CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=$PORT"]
