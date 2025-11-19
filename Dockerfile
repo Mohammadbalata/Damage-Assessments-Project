@@ -8,10 +8,9 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libpng-dev \
     libonig-dev \
-    libxml2-dev
-
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+    libxml2-dev \
+    libpq-dev \
+    && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd
 
 # Install Composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
@@ -24,10 +23,7 @@ COPY . .
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Clear caches
-RUN php artisan config:clear && php artisan cache:clear
-
 EXPOSE 8080
 
-# Start Laravel server
-CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=$PORT"]
+# Clear caches and start Laravel server at runtime
+CMD ["sh", "-c", "php artisan config:clear && php artisan cache:clear && php artisan serve --host=0.0.0.0 --port=$PORT"]
